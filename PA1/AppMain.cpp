@@ -64,7 +64,6 @@ void draw()
 	GLsizei indices = 6;
 	glDrawElements(mode, indices, GL_UNSIGNED_BYTE, nullptr);
 
-
 }
 
 // Create and Compile Shaders
@@ -146,19 +145,17 @@ int main(void)
 
 	GLfloat vertices[] = {
 
-		// Triangle 1
-		-0.5, -0.5, 0.0, // index 0
-		1.0, 0.0, 0.0, // red
+		-0.001, 0.4, 0.0,
+		0.0, 1.0, 0.0,
 
-		-0.5, 0.5, 0.0, // index 1
-		0.0, 1.0, 0.0, // green
+		-0.001, -0.4, 0.0,
+		0.0, 1.0, 0.0,
 
-		0.5, -0.5, 0.0,  // index 2	
-		0.0, 0.0, 1.0, // blue
+		0.001, 0.4, 0.0,
+		0.0, 1.0, 0.0,
 
-		// Triangle 2	
-		0.5, 0.5, 0.0,  // index 3	
-		1.0, 0.0, 1.0 // purple
+		0.001, 0.4, 0.0,
+		0.0, 1.0, 0.0
 	};
 
 	// Define element indices
@@ -168,12 +165,11 @@ int main(void)
 	};
 
 	// Plane Transforms
-	glm::vec3 planePositions[] = {
-		glm::vec3(0.0f,  0.0f,  0.5f),
-		glm::vec3(0.5f,  0.0f,  0.0f),
-		glm::vec3(0.0f,  0.0f,  -0.5f),
-		glm::vec3(-0.5f, 0.0f,  0.0f)
-	};
+	glm::vec3 planePositions[360];
+	// fill values for planePositions
+	for (int i = 0; i < 360; ++i) {
+		planePositions[i] = glm::vec3(sin(i*toRadians)*0.25, 0.0f, cos(i*toRadians)*0.25);
+	}
 
 	glm::float32 planeRotations[] = {
 		0.0f, 90.0f, 0.0f, 90.0f
@@ -277,13 +273,15 @@ int main(void)
 
 		glBindVertexArray(VAO); // User-defined VAO must be called before draw. 
 
-		for (GLuint i = 0; i < 4; i++)
+		// TODO
+		// Loop to rotate
+		for (GLuint i = 0; i < 360; i++)
 		{
-			glm::mat4 modelMatrix;
-			modelMatrix = glm::translate(modelMatrix, planePositions[i]);
-			modelMatrix = glm::rotate(modelMatrix, planeRotations[i] * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
-			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
-			// Draw primitive(s)
+			glm::mat4 modelmatrix;
+			modelmatrix = glm::translate(modelmatrix, planePositions[i]);
+			//5modelmatrix = glm::rotate(modelmatrix, planeRotations[i] * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelmatrix));
+			// draw primitive(s)
 			draw();
 		}
 
