@@ -307,6 +307,7 @@ int main(void)
 	glDeleteBuffers(1, &EBO);
 
 
+
 	glfwTerminate();
 	return 0;
 }
