@@ -12,6 +12,7 @@ using namespace std;
 const double PI = 3.14159;
 const float toRadians = PI / 180.0f;
 int width = 640, height = 480;
+const int rotateNum = 360;
 
 // input function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -61,7 +62,7 @@ bool firstMouseMove = true;
 void draw()
 {
 	GLenum mode = GL_TRIANGLES;
-	GLsizei indices = 6;
+	GLsizei indices = 15;
 	glDrawElements(mode, indices, GL_UNSIGNED_BYTE, nullptr);
 
 }
@@ -145,35 +146,75 @@ int main(void)
 
 	GLfloat vertices[] = {
 
-		-0.001, 0.4, 0.0,
-		0.0, 1.0, 0.0,
+		// Main Cylinder
 
+		// Vertex 0
+		-0.001, 0.4, 0.0, // vertex location
+		0.0, 1.0, 0.0,	  // vertex color
+		//Vertex 1
 		-0.001, -0.4, 0.0,
 		0.0, 1.0, 0.0,
-
+		// Vertex 2
 		0.001, 0.4, 0.0,
 		0.0, 1.0, 0.0,
+		// Vertex 3
+		0.001, -0.4, 0.0,
+		0.0, 1.0, 0.0,
 
+		// Top slope
+
+		// Vertex 4
+		-0.001, 0.4, 0.0,
+		1.0, 0.0, 0.0,
+		// Vertex 5
 		0.001, 0.4, 0.0,
-		0.0, 1.0, 0.0
+		1.0, 0.0, 0.0,
+		// Vertex 6
+		-0.0008, 0.48, -0.05,
+		1.0, 0.0, 0.0,
+		// Vertex 7
+		0.0008, 0.48, -0.05,
+		1.0, 0.0, 0.0,
+
+
+		// Top flat
+		// Vertex 8
+		0.0, 0.45, -0.25,
+		0.0, 0.0, 1.0,
+		// Vertex 9
+		-0.001, 0.45, -0.04,
+		0.0, 0.0, 1.0,
+		// Vertex 10
+		0.001, 0.45, -0.04,
+		0.0, 0.0, 1.0,
+
+		// Bottom slope
+
 	};
 
 	// Define element indices
 	GLubyte indices[] = {
+		// cylinder
 		0, 1, 2,
-		1, 2, 3
+		1, 2, 3,
+		// top slope
+		4, 5, 6,
+		5, 6, 7,
+		// top flat
+		8, 9, 10
 	};
 
 	// Plane Transforms
-	glm::vec3 planePositions[360];
+	glm::vec3 planePositions[rotateNum];
 	// fill values for planePositions
-	for (int i = 0; i < 360; ++i) {
+	for (int i = 0; i < rotateNum; ++i) {
 		planePositions[i] = glm::vec3(sin(i*toRadians)*0.25, 0.0f, cos(i*toRadians)*0.25);
 	}
 
-	glm::float32 planeRotations[] = {
-		0.0f, 90.0f, 0.0f, 90.0f
-	};
+	glm::float32 planeRotations[rotateNum];
+	for (int i = 0; i < rotateNum; ++i) {
+		planeRotations[i] = i;
+	}
 
 	// Setup some OpenGL options
 	glEnable(GL_DEPTH_TEST);
@@ -273,13 +314,12 @@ int main(void)
 
 		glBindVertexArray(VAO); // User-defined VAO must be called before draw. 
 
-		// TODO
 		// Loop to rotate
-		for (GLuint i = 0; i < 360; i++)
+		for (GLuint i = 0; i < rotateNum; i++)
 		{
 			glm::mat4 modelmatrix;
 			modelmatrix = glm::translate(modelmatrix, planePositions[i]);
-			//5modelmatrix = glm::rotate(modelmatrix, planeRotations[i] * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+			modelmatrix = glm::rotate(modelmatrix, planeRotations[i] * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
 			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelmatrix));
 			// draw primitive(s)
 			draw();
