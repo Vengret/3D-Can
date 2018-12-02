@@ -62,7 +62,7 @@ bool firstMouseMove = true;
 void draw()
 {
 	GLenum mode = GL_TRIANGLES;
-	GLsizei indices = 15;
+	GLsizei indices = 24;
 	glDrawElements(mode, indices, GL_UNSIGNED_BYTE, nullptr);
 
 }
@@ -149,31 +149,31 @@ int main(void)
 		// Main Cylinder
 
 		// Vertex 0
-		-0.001, 0.4, 0.0, // vertex location
+		-0.1, 0.4, 0.0, // vertex location
 		0.0, 1.0, 0.0,	  // vertex color
 		//Vertex 1
-		-0.001, -0.4, 0.0,
+		-0.1, -0.4, 0.0,
 		0.0, 1.0, 0.0,
 		// Vertex 2
-		0.001, 0.4, 0.0,
+		0.1, 0.4, 0.0,
 		0.0, 1.0, 0.0,
 		// Vertex 3
-		0.001, -0.4, 0.0,
+		0.1, -0.4, 0.0,
 		0.0, 1.0, 0.0,
 
 		// Top slope
 
 		// Vertex 4
-		-0.001, 0.4, 0.0,
+		-0.1, 0.4, 0.0,
 		1.0, 0.0, 0.0,
 		// Vertex 5
-		0.001, 0.4, 0.0,
+		0.1, 0.4, 0.0,
 		1.0, 0.0, 0.0,
 		// Vertex 6
-		-0.0008, 0.48, -0.05,
+		-0.08, 0.48, -0.05,
 		1.0, 0.0, 0.0,
 		// Vertex 7
-		0.0008, 0.48, -0.05,
+		0.08, 0.48, -0.05,
 		1.0, 0.0, 0.0,
 
 
@@ -182,14 +182,36 @@ int main(void)
 		0.0, 0.45, -0.25,
 		0.0, 0.0, 1.0,
 		// Vertex 9
-		-0.001, 0.45, -0.04,
+		-0.1, 0.45, -0.04,
 		0.0, 0.0, 1.0,
 		// Vertex 10
-		0.001, 0.45, -0.04,
+		0.1, 0.45, -0.04,
 		0.0, 0.0, 1.0,
 
 		// Bottom slope
+		// Vertex 11
+		-0.1, -0.4, 0.0,
+		1.0, 0.0, 0.0,
+		// Vertex 12
+		0.1, -0.4, 0.0,
+		1.0, 0.0, 0.0,
+		// Vertex 13
+		-0.1, -0.43, -0.05,
+		1.0, 0.0, 0.0,
+		// Vertex 14
+		0.1, -0.43, -0.05,
+		1.0, 0.0, 0.0,
 
+		// Bottom flat
+		// Vetex 15
+		-0.1, -0.43, -0.05,
+		0.0, 0.0, 1.0,
+		// Vetex 16
+		0.1, -0.43, -0.05,
+		0.0, 0.0, 1.0,
+		// Vetex 17
+		0.0, -0.43, -0.25,
+		0.0, 0.0, 1.0,
 	};
 
 	// Define element indices
@@ -201,7 +223,12 @@ int main(void)
 		4, 5, 6,
 		5, 6, 7,
 		// top flat
-		8, 9, 10
+		8, 9, 10,
+		// botton slope
+		11, 12, 13,
+		12, 13, 14,
+		// bottom flat
+		15, 16, 17
 	};
 
 	// Plane Transforms
