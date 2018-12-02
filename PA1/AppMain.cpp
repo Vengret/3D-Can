@@ -247,7 +247,7 @@ int main(void)
 	glEnable(GL_DEPTH_TEST);
 
 	// Wireframe mode
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	GLuint VBO, EBO, VAO;
 
