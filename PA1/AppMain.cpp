@@ -7,65 +7,66 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <SOIL2/SOIL2.h>
+
 using namespace std;
 
+int width, height;
 const double PI = 3.14159;
 const float toRadians = PI / 180.0f;
-int width = 640, height = 480;
-const int rotateNum = 360;
 
-// input function prototypes
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+// Declare Input Callback Function prototypes
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mode);
 
-// declare init camera
-void initCamera();
-
-// declare view matrix
+// Declare View Matrix
 glm::mat4 viewMatrix;
 
-// initialize FOV
-GLfloat fov = 45.f;
+// Camera Field of View
+GLfloat fov = 45.0f;
 
-// define camera attributes
-glm::vec3 cameraPosition = glm::vec3(0.f, 0.f, 3.f);
-glm::vec3 target = glm::vec3(0.f, 0.f, 0.f);
-glm::vec3 cameraDirection = glm::normalize(cameraPosition - target);
-glm::vec3 worldUp = glm::vec3(0.f, 1.f, 0.f);
-glm::vec3 cameraRight = glm::normalize(glm::cross(worldUp, cameraDirection));
-glm::vec3 cameraUp = glm::normalize(glm::cross(cameraDirection, cameraRight));
-glm::vec3 cameraFront = glm::normalize(glm::vec3(0.f, 0.f, -1.f));
+void initiateCamera();
 
-// declare target prototype
-glm::vec3 getTarget();
+// Define Camera Attributes
+glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f); // Move 3 units back in z towards screen
+glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f); // What the camera points to
+glm::vec3 cameraDirection = glm::normalize(cameraPosition - target); // direction z
+glm::vec3 worldUp = glm::vec3(0.0, 1.0f, 0.0f);
+glm::vec3 cameraRight = glm::normalize(glm::cross(worldUp, cameraDirection));// right vector x
+glm::vec3 cameraUp = glm::normalize(glm::cross(cameraDirection, cameraRight)); // up vector y
+glm::vec3 CameraFront = glm::vec3(0.0f, 0.0f, -1.0f); // 1 unit away from lense
 
-// Camera transformation prototype
-void transformCamera();
 
-// boolean for keys and mouse buttons
-bool keys[1024], mouseButtons[2];
 
-// Boolean to check camera transformations
+// Camera Transformation Prototype
+void TransformCamera();
+
+// Boolean array for keys and mouse buttons
+bool keys[1024], mouseButtons[3];
+
+// Input state booleans
 bool isPanning = false, isOrbiting = false;
 
-// Radius, Pitch, and Yaw
-GLfloat radius = 3.f, rawYaw = 0.f, rawPitch = 0.f, degYaw, degPitch;
+// Pitch and Yaw
+GLfloat radius = 3.0f, rawYaw = 0.0f, rawPitch = 0.0f, degYaw, degPitch;
 
-// variable used to ensure program runs the same of different computers
-GLfloat deltaTime = 0.f, lastFrame = 0.f;
-GLfloat lastX = width / 2, lastY = height / 2, xChange, yChange;
+GLfloat deltaTime = 0.0f;
+GLfloat lastFrame = 0.0f;
+GLfloat lastX = 320, lastY = 240, xChange, yChange; // Center mouse cursor
 bool firstMouseMove = true;
+
 
 // Draw Primitive(s)
 void draw()
 {
 	GLenum mode = GL_TRIANGLES;
-	GLsizei indices = 24;
+	GLsizei indices = 6;
 	glDrawElements(mode, indices, GL_UNSIGNED_BYTE, nullptr);
-
 }
+
+
 
 // Create and Compile Shaders
 static GLuint CompileShader(const string& source, GLuint shaderType)
@@ -116,6 +117,7 @@ static GLuint CreateShaderProgram(const string& vertexShader, const string& frag
 
 int main(void)
 {
+	width = 640; height = 480;
 
 	GLFWwindow* window;
 
@@ -131,9 +133,9 @@ int main(void)
 		return -1;
 	}
 
-	// Set callback functions
+	// Set input callback functions
 	glfwSetKeyCallback(window, key_callback);
-	glfwSetCursorPosCallback(window, cursor_position_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 
@@ -144,122 +146,66 @@ int main(void)
 	if (glewInit() != GLEW_OK)
 		cout << "Error!" << endl;
 
+
 	GLfloat vertices[] = {
 
-		// Main Cylinder
+		// Triangle 1
+		-0.5, -0.5, 0.0, // index 0
+		1.0, 0.0, 0.0, // red
 
-		// Vertex 0
-		-0.1, 0.4, 0.0, // vertex location
-		0.04, 1.0, 0.38,	  // vertex color
-		//Vertex 1
-		-0.1, -0.4, 0.0,
-		0.04, 1.0, 0.38,
-		// Vertex 2
-		0.1, 0.4, 0.0,
-		0.04, 1.0, 0.38,
-		// Vertex 3
-		0.1, -0.4, 0.0,
-		0.04, 1.0, 0.38,
+		-0.5, 0.5, 0.0, // index 1
+		0.0, 1.0, 0.0, // green
 
-		// Top slope
+		0.5, -0.5, 0.0,  // index 2	
+		0.0, 0.0, 1.0, // blue
 
-		// Vertex 4
-		-0.1, 0.4, 0.0,
-		0.55, 0.55, 0.55,
-		// Vertex 5
-		0.1, 0.4, 0.0,
-		0.55, 0.55, 0.55,
-		// Vertex 6
-		-0.08, 0.48, -0.05,
-		0.55, 0.55, 0.55,
-		// Vertex 7
-		0.08, 0.48, -0.05,
-		0.55, 0.55, 0.55,
-
-
-		// Top flat
-		// Vertex 8
-		0.0, 0.45, -0.25,
-		0.67, 0.67, 0.67,
-		// Vertex 9
-		-0.1, 0.45, -0.04,
-		0.67, 0.67, 0.67,
-		// Vertex 10
-		0.1, 0.45, -0.04,
-		0.67, 0.67, 0.67,
-
-		// Bottom slope
-		// Vertex 11
-		-0.1, -0.4, 0.0,
-		0.55, 0.55, 0.55,
-		// Vertex 12
-		0.1, -0.4, 0.0,
-		0.55, 0.55, 0.55,
-		// Vertex 13
-		-0.1, -0.43, -0.05,
-		0.55, 0.55, 0.55,
-		// Vertex 14
-		0.1, -0.43, -0.05,
-		0.55, 0.55, 0.55,
-
-		// Bottom flat
-		// Vetex 15
-		-0.1, -0.43, -0.05,
-		0.67, 0.67, 0.67,
-		// Vetex 16
-		0.1, -0.43, -0.05,
-		0.67, 0.67, 0.67,
-		// Vetex 17
-		0.0, -0.43, -0.25,
-		0.67, 0.67, 0.67,
+		// Triangle 2	
+		0.5, 0.5, 0.0,  // index 3	
+		1.0, 0.0, 1.0 // purple
 	};
 
 	// Define element indices
 	GLubyte indices[] = {
-		// cylinder
 		0, 1, 2,
-		1, 2, 3,
-		// top slope
-		4, 5, 6,
-		5, 6, 7,
-		// top flat
-		8, 9, 10,
-		// botton slope
-		11, 12, 13,
-		12, 13, 14,
-		// bottom flat
-		15, 16, 17
+		1, 2, 3
 	};
 
 	// Plane Transforms
-	glm::vec3 planePositions[rotateNum];
-	// fill values for planePositions
-	for (int i = 0; i < rotateNum; ++i) {
-		planePositions[i] = glm::vec3(sin(i*toRadians)*0.25, 0.0f, cos(i*toRadians)*0.25);
-	}
+	glm::vec3 planePositions[] = {
+		glm::vec3(0.0f,  0.0f,  0.5f),
+		glm::vec3(0.5f,  0.0f,  0.0f),
+		glm::vec3(0.0f,  0.0f,  -0.5f),
+		glm::vec3(-0.5f, 0.0f,  0.0f),
+		glm::vec3(0.0f, 0.5f,  0.0f),
+		glm::vec3(0.0f, -0.5f,  0.0f)
+	};
 
-	glm::float32 planeRotations[rotateNum];
-	for (int i = 0; i < rotateNum; ++i) {
-		planeRotations[i] = i;
-	}
+	glm::float32 planeRotations[] = {
+		0.0f, 90.0f, 0.0f, 90.0f, 90.f, 90.f
+	};
 
 	// Setup some OpenGL options
 	glEnable(GL_DEPTH_TEST);
 
 	// Wireframe mode
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	GLuint VBO, EBO, VAO;
+	GLuint cubeVBO, cubeEBO, cubeVAO, floorVBO, floorEBO, floorVAO;
 
-	glGenBuffers(1, &VBO); // Create VBO
-	glGenBuffers(1, &EBO); // Create EBO
+	glGenBuffers(1, &cubeVBO); // Create VBO
+	glGenBuffers(1, &cubeEBO); // Create EBO
 
-	glGenVertexArrays(1, &VAO); // Create VOA
-	glBindVertexArray(VAO);
+	glGenBuffers(1, &floorVBO); // Create VBO
+	glGenBuffers(1, &floorEBO); // Create EBO
+
+	glGenVertexArrays(1, &cubeVAO); // Create VOA
+	glGenVertexArrays(1, &floorVAO); // Create VOA
+
+	glBindVertexArray(cubeVAO);
 
 	// VBO and EBO Placed in User-Defined VAO
-	glBindBuffer(GL_ARRAY_BUFFER, VBO); // Select VBO
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); // Select EBO
+	glBindBuffer(GL_ARRAY_BUFFER, cubeVBO); // Select VBO
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cubeEBO); // Select EBO
 
 
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // Load vertex attributes
@@ -273,6 +219,23 @@ int main(void)
 	glEnableVertexAttribArray(1);
 
 	glBindVertexArray(0); // Unbind VOA or close off (Must call VOA explicitly in loop)
+
+
+	glBindVertexArray(floorVAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, floorVBO); // Select VBO
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, floorEBO); // Select EBO
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // Load vertex attributes
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); // Load indices 
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
+
+	glBindVertexArray(0);
 
 	// Vertex shader source code
 	string vertexShaderSource =
@@ -306,7 +269,7 @@ int main(void)
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
-		// set delta time
+		// Set frame time
 		GLfloat currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
@@ -322,11 +285,13 @@ int main(void)
 		glUseProgram(shaderProgram); // Call Shader per-frame when updating attributes
 
 
-		// Declare transformations (can be initialized outside loop)
+		// Declare transformations (can be initialized outside loop)		
 		glm::mat4 projectionMatrix;
 
-		viewMatrix = glm::lookAt(cameraPosition, getTarget(), worldUp);
+		// Define LookAt Matrix
+		viewMatrix = glm::lookAt(cameraPosition, target, worldUp);
 
+		// Define projection matrix
 		projectionMatrix = glm::perspective(fov, (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
 
 		// Get matrix's uniform location and set matrix
@@ -334,153 +299,146 @@ int main(void)
 		GLint viewLoc = glGetUniformLocation(shaderProgram, "view");
 		GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
 
-		//glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+		
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 
 
-		glBindVertexArray(VAO); // User-defined VAO must be called before draw. 
+		glBindVertexArray(cubeVAO); // User-defined VAO must be called before draw. 
 
-		// Loop to rotate
-		for (GLuint i = 0; i < rotateNum; i++)
+		// Transform planes to form cube
+		for (GLuint i = 0; i < 6; i++)
 		{
-			glm::mat4 modelmatrix;
-			modelmatrix = glm::translate(modelmatrix, planePositions[i]);
-			modelmatrix = glm::rotate(modelmatrix, planeRotations[i] * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
-			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelmatrix));
-			// draw primitive(s)
+			glm::mat4 modelMatrix;
+			modelMatrix = glm::translate(modelMatrix, planePositions[i]);
+			modelMatrix = glm::rotate(modelMatrix, planeRotations[i] * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+			if (i >= 4)
+				modelMatrix = glm::rotate(modelMatrix, planeRotations[i] * toRadians, glm::vec3(1.0f, 0.0f, 0.0f));
+			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+			// Draw primitive(s)
 			draw();
 		}
 
 		// Unbind Shader exe and VOA after drawing per frame
 		glBindVertexArray(0); //Incase different VAO wii be used after
+
+		// Select and transform floor
+		glBindVertexArray(floorVAO);
+		glm::mat4 modelMatrix;
+		modelMatrix = glm::translate(modelMatrix, glm::vec3(0.f, -.5f, 0.f));
+		modelMatrix = glm::rotate(modelMatrix, 90.f * toRadians, glm::vec3(1.0f, 0.0f, 0.0f));
+		modelMatrix = glm::scale(modelMatrix, glm::vec3(5.f, 5.f, 5.f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+		draw();
+		glBindVertexArray(0); //Incase different VAO will be used after
+
+
+
 		glUseProgram(0); // Incase different shader will be used after
 
-	    /* Swap front and back buffers */
+		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
 
 		/* Poll for and process events */
 		glfwPollEvents();
 
-		// Poll camera transformation
-		transformCamera();
+		// Poll Camera Transformations
+		TransformCamera();
+
 	}
 
 	//Clear GPU resources
-	glDeleteVertexArrays(1, &VAO);
-	glDeleteBuffers(1, &VBO);
-	glDeleteBuffers(1, &EBO);
-
+	glDeleteVertexArrays(1, &cubeVAO);
+	glDeleteBuffers(1, &cubeVBO);
+	glDeleteBuffers(1, &cubeEBO);
+	glDeleteVertexArrays(1, &floorVAO);
+	glDeleteBuffers(1, &floorVBO);
+	glDeleteBuffers(1, &floorEBO);
 
 
 	glfwTerminate();
 	return 0;
 }
 
-// Define input callback functions
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+// Define input functions
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
-	// assign keys as true if pressed and false when released
-	if (action == GLFW_PRESS)
-	{
-		keys[key] = true;
-	}
-	else if (action == GLFW_RELEASE)
-	{
-		keys[key] = false;
-	}	
-}
+	// Display ASCII Key code
+	//std::cout <<"ASCII: "<< key << std::endl;	
 
+	// Close window
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, GL_TRUE);
+
+	// Assign true to Element ASCII if key pressed
+	if (action == GLFW_PRESS)
+		keys[key] = true;
+	else if (action == GLFW_RELEASE) // Assign false to Element ASCII if key released
+		keys[key] = false;
+
+}
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	// clamp fov
-	if (fov >= 1.f && fov <= 55.f)
-		fov -= yoffset * 0.02;
-	
-	// default fov (keep between 1 and 55
-	if (fov < 1.f)
-		fov = 1.f;
-	if (fov > 55)
-		fov = 55.f;
-}
 
-static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+	// Clamp FOV
+	if (fov >= 1.0f && fov <= 55.0f)
+		fov -= yoffset * 0.01;
+
+	// Default FOV
+	if (fov < 1.0f)
+		fov = 1.0f;
+	if (fov > 55.0f)
+		fov = 55.0f;
+
+}
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
+
 	if (firstMouseMove)
 	{
 		lastX = xpos;
 		lastY = ypos;
 		firstMouseMove = false;
 	}
-
-	// calculate cursor offset
+	// Calculate mouse offset (Easing effect)
 	xChange = xpos - lastX;
-	yChange = lastY - ypos;
+	yChange = lastY - ypos; // Inverted cam
 
+							// Get current mouse (always starts at 0)
 	lastX = xpos;
 	lastY = ypos;
 
-	// Pan camera
-	if (isPanning)
-	{
-		GLfloat cameraSpeed = xChange * deltaTime;
-		cameraPosition -= cameraSpeed * cameraRight;
-		target.x -= cameraSpeed;
 
-		cameraSpeed = yChange * deltaTime;
-		cameraPosition -= cameraSpeed * cameraUp;
-		target.y -= cameraSpeed;
-			
-	}
-
-	// Orbit camera
 	if (isOrbiting)
 	{
+		// Update raw yaw and pitch with mouse movement
 		rawYaw += xChange;
 		rawPitch += yChange;
 
-		// convert to degrees
+		// Conver yaw and pitch to degrees, and clamp pitch
 		degYaw = glm::radians(rawYaw);
-		//degPitch = glm::radians(rawPitch);
 		degPitch = glm::clamp(glm::radians(rawPitch), -glm::pi<float>() / 2.f + .1f, glm::pi<float>() / 2.f - .1f);
 
-		// Azimuth altitude formula
-		cameraPosition.x = target.x - radius * cosf(degPitch) * sinf(degYaw);
-		cameraPosition.y = target.y - radius * sinf(degPitch);
-		cameraPosition.z = target.z + radius * cosf(degYaw)  * cosf(degPitch);
-
+		// Azimuth Altitude formula
+		cameraPosition.x = target.x + radius * cosf(degPitch) * sinf(degYaw);
+		cameraPosition.y = target.y + radius * sinf(degPitch);
+		cameraPosition.z = target.z + radius * cosf(degPitch) * cosf(degYaw);
 	}
 }
-
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mode)
 {
-	// assign button as true when pressed and false when released
+	// Assign boolean state to element Button code
 	if (action == GLFW_PRESS)
-	{
 		mouseButtons[button] = true;
-	}
 	else if (action == GLFW_RELEASE)
 		mouseButtons[button] = false;
 }
 
-// define get target function
-glm::vec3 getTarget()
-{
-	//if (isPanning) {
-	//	target = cameraPosition + cameraFront;
-	//}
 
-	return target;
-}
 
-// define transform camera
-void transformCamera()
+// Define TransformCamera function
+void TransformCamera()
 {
-	// Pan camera
-	if (keys[GLFW_KEY_LEFT_ALT] && mouseButtons[GLFW_MOUSE_BUTTON_RIGHT])
-		isPanning = true;
-	else
-		isPanning = false;
 
 	// Orbit camera
 	if (keys[GLFW_KEY_LEFT_ALT] && mouseButtons[GLFW_MOUSE_BUTTON_LEFT])
@@ -488,19 +446,19 @@ void transformCamera()
 	else
 		isOrbiting = false;
 
-	// reset camera
+	// Focus camera
 	if (keys[GLFW_KEY_F])
-		initCamera();
+		initiateCamera();
 }
 
-// define init camera
-void initCamera()
-{
-	cameraPosition = glm::vec3(0.f, 0.f, 3.f);
-	target = glm::vec3(0.f, 0.f, 0.f);
-	cameraDirection = glm::normalize(cameraPosition - target);
-	worldUp = glm::vec3(0.f, 1.f, 0.f);
-	cameraRight = glm::normalize(glm::cross(worldUp, cameraDirection));
-	cameraUp = glm::normalize(glm::cross(cameraDirection, cameraRight));
-	cameraFront = glm::normalize(glm::vec3(0.f, 0.f, -1.f));
+// Define 
+void initiateCamera()
+{	// Define Camera Attributes
+	cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f); // Move 3 units back in z towards screen
+	target = glm::vec3(0.0f, 0.0f, 0.0f); // What the camera points to
+	cameraDirection = glm::normalize(cameraPosition - cameraDirection); // direction z
+	worldUp = glm::vec3(0.0, 1.0f, 0.0f);
+	cameraRight = glm::normalize(glm::cross(worldUp, cameraDirection));// right vector x
+	cameraUp = glm::normalize(glm::cross(cameraDirection, cameraRight)); // up vector y
+	CameraFront = glm::vec3(0.0f, 0.0f, -1.0f); // 1 unit away from lense
 }
